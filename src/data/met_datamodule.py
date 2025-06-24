@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
-from metdataset import MetDataset
+from components.metdataset import MetDataset
 from torchvision.transforms import transforms
 
 
