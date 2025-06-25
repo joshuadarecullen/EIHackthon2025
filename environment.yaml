@@ -1,45 +1,31 @@
-# reasons you might want to use `environment.yaml` instead of `requirements.txt`:
-# - pip installs packages in a loop, without ensuring dependencies across all packages
-#   are fulfilled simultaneously, but conda achieves proper dependency control across
-#   all packages
-# - conda allows for installing packages without requiring certain compilers or
-#   libraries to be available in the system, since it installs precompiled binaries
-
-name: myenv
-
+name: eihack
 channels:
-  - pytorch
   - conda-forge
   - defaults
-
-# it is strongly recommended to specify versions of packages installed through conda
-# to avoid situation when version-unspecified packages install their latest major
-# versions which can sometimes break things
-
-# current approach below keeps the dependencies in the same major versions across all
-# users, but allows for different minor and patch versions of packages where backwards
-# compatibility is usually guaranteed
-
 dependencies:
-  - python=3.10
-  - pytorch=2.*
-  - torchvision=0.*
-  - lightning=2.*
-  - torchmetrics=0.*
-  - hydra-core=1.*
-  - rich=13.*
-  - pre-commit=3.*
-  - pytest=7.*
-
-  # --------- loggers --------- #
-  # - wandb
-  # - neptune-client
-  # - mlflow
-  # - comet-ml
-  # - aim>=3.16.2 # no lower than 3.16.2, see https://github.com/aimhubio/aim/issues/2550
-
-  - pip>=23
+  - numpy=2.1.1
+  - packaging=24.1
+  - python=3.12.2
   - pip:
-      - hydra-optuna-sweeper
-      - hydra-colorlog
-      - rootutils
+      - python-box
+      - einops==0.8.1
+      - hydra-colorlog==1.2.0
+      - hydra-core==1.4.0.dev1
+      - hydra-optuna-sweeper==1.2.0
+      - optuna==2.10.1
+      - pytorch-lightning==2.5.0.post0
+      - rasterio==1.4.3
+      - rich==13.5.2
+      - rootutils==1.0.7
+      - scipy==1.15.2
+      - segmentation-models-pytorch==0.4.0
+      - tokenizers==0.21.0
+      - torch==2.6.0
+      - torch-summary==1.4.5
+      - torchgeo==0.6.2
+      - torchmetrics==1.6.2
+      - torchvision==0.21.0
+      - triton==3.2.0
+      - wandb==0.19.8
+      - pyarrow
+      - notebook==6
