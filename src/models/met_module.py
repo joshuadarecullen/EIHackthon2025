@@ -5,22 +5,7 @@ from pytorch_lightning import LightningModule
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification.accuracy import Accuracy
 
-import clip
-from transformers import CLIPModel
-
-# --- Resize Positional Embeddings for 120x160 input ---
-def resize_pos_embed(model, new_grid_size=(7, 10)):  # (H, W)
-    old_pe = model.positional_embedding  # (1, num_patches+1, dim)
-    cls_token = old_pe[:, 0:1, :]
-    patch_pe = old_pe[:, 1:, :]
-
-    old_grid_size = int(patch_pe.shape[1] ** 0.5)  # typically 14
-    patch_pe = patch_pe.reshape(1, old_grid_size, old_grid_size, -1).permute(0, 3, 1, 2)
-    patch_pe = F.interpolate(patch_pe, size=new_grid_size, mode='bilinear')
-    patch_pe = patch_pe.permute(0, 2, 3, 1).reshape(1, -1, patch_pe.shape[1])
-
-    new_pe = torch.cat([cls_token, patch_pe], dim=1)
-    model.positional_embedding = torch.nn.Parameter(new_pe)
+from transformers import BertModel
 
 class MetLitModule(LightningModule):
     """LightningModule for finetuing a CLIP model to Meteorological data.
@@ -57,10 +42,10 @@ class MetLitModule(LightningModule):
 
     def __init__(
         self,
+        model_type: torch.nn.Module,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
         compile: bool,
-        model_type: str= "openai/clip-vit-base-patch32",
     ) -> None:
         """
         :param net: The model to train.
@@ -74,8 +59,10 @@ class MetLitModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         # Load pretrained clip model
-        self.model = CLIPModel.from_pretrained("model_type")
-        resize_pos_embed(self.model.visual, new_grid_size=(7, 10))
+        self.met_encoder = model
+
+        # Load tokenizer and model
+        self.text_encoder = BertModel.from_pretrained('bert-base-uncased').eval()
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -84,7 +71,13 @@ class MetLitModule(LightningModule):
         :param x: A tensor of images.
         :return: A tensor of logits.
         """
-        return self.model(x)
+
+        met_data, tokens, labels, datetimes = x
+
+        # Forward pass
+        encoded_texts = self.text_encoder(**tokens)
+        encoded_met_data = self.met_encoder(met_data)
+        return encoded_texts, encoded_met_data
 
     def on_train_start(self) -> None:
         """Lightning hook that is called when training begins."""
@@ -102,10 +95,11 @@ class MetLitModule(LightningModule):
             - A tensor of predictions.
             - A tensor of target labels.
         """
-        met_data, texts = batch
+        met_data, tokens, labels, datetimes = batch
 
         # Forward pass
-        logits_per_met, logits_per_text = self.model(met_data, texts)
+        encoded_texts = self.text_encoder(**tokens)
+        encoded_met_data = self.met_encoder(met_data)
 
         """
         Compute loss:

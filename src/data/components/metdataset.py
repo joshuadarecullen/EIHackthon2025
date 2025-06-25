@@ -1,5 +1,6 @@
-from typing import Tuple, Path, Callable
+from typing import Tuple, Callable
 
+import os
 import csv
 import numpy as np
 
@@ -7,43 +8,59 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from PIL import Image
-
-import clip
-from transformers import CLIPProcessor
-
+from transformers import BertTokenizer, BertModel
 
 class MetDataset(Dataset):
-    def __init__(self, data_dir: Path, transform: Callable):
+    def __init__(self, data_dir: str, transform: Callable):
 
         self.data_dir = data_dir
-        self.transform = Callable[Tensor, Tensor]]
+        self.transform = transform
 
-        self.csv_path = os.path.join(self.data_dir, f"{metdata}.csv")
-        texts = []
-        met_data_paths = []
+        self.csv_path = os.path.join(self.data_dir, f"notebooks/dataset.csv")
+        self.texts = []
+        self.labels = []
+        self.datetime = []
+        self.npy_paths = []
 
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         with open(self.csv_path, newline='', encoding='utf-8') as csvfile:
             csv_reader = csv.DictReader(csvfile)
             for row in csv_reader:
-                texts.append(row["text"])
-                met_data_paths.append(row["met_data_path"])
+                self.texts.append(tokenizer(row["description"], #  a list of strings
+                                            padding=True,       #  pad to longest sequence
+                                            truncation=True,    #  truncate sequences that are too long
+                                            return_tensors='pt' #  return PyTorch tensors
+                                            ))
+                self.datetime.append(row["datetime"])
+                self.labels.append(row["label"].split)
+                self.npy_paths.append(row["path"])
 
-        self.met_data_paths = [os.path.join(self.data_dir, x)
-                          for x in met_data_paths]
-        self.texts = texts
+        self.npy_paths = [os.path.join(self.data_dir+'data/', x)
+                          for x in self.npy_paths]
 
-        # self.tokenized_texts = clip.tokenize(texts)
-
-        # self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # Preprocess met data using CLIP's preprocessing function
-        # met_data_sample = preprocess(np.load(self.met_data_paths[idx]))
-        # met_data_sample = np.load(self.met_data_paths[idx])
+        met_data = np.load(self.npy_paths[idx])
+        if self.transform:
+            met_data = self.transform(met_data)
+
+        label = self.labels[idx]
+        datetime = self.datetime[idx]
         text = self.texts[idx]
-        return met_data_sample, text
+        return met_data, text, label, datetime
 
 
     def __len__(self):
         return len(self.met_data_paths)
+
+
+if __name__ == "__main__":
+    '/home/joshua/Documents/phd_university/hackathon/EIHackthon2025/'
+    dataset = MetDataset('/home/joshua/Documents/phd_university/hackathon/EIHackthon2025/', transform=None)
+    text_encoder = BertModel.from_pretrained('bert-base-uncased').eval()
+
+    met_data, text, label, datetime = dataset[0]
+    print(len(text_encoder(**text)))
+    # print(len(dataset.labels))
+    # print(len(dataset.texts))
+    # print(dataset.texts[0])
