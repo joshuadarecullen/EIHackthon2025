@@ -7,7 +7,7 @@ from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification.accuracy import Accuracy
 
 
-class MetLitModule(LightningModule):
+class MetClassLitModule(LightningModule):
     """LightningModule for finetuing a CLIP based model to Meteorological data.
         - Geopotential
         - Air pressure
@@ -65,15 +65,21 @@ class MetLitModule(LightningModule):
         self.val_loss = MeanMetric()
         self.test_loss = MeanMetric()
 
-    def forward(self, climate_data: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
+         # metric objects for calculating and averaging accuracy across batches
+        self.train_acc = Accuracy(task="multiclass", num_classes=10)
+        self.val_acc = Accuracy(task="multiclass", num_classes=10)
+        self.test_acc = Accuracy(task="multiclass", num_classes=10)
+
+        self.best_val_acc = MaxMetric()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Perform a forward pass through the model `self.net`.
 
         :param x: Two tensors of climate data and text.
         :return: Two tensors of encoded climate data and text.
         """
         # Forward pass
-        encoded_texts, encoded_met_data = self.net(climate_data, text)
-        return encoded_texts, encoded_met_data
+        return self.net(x)
 
     def on_train_start(self) -> None:
         """Lightning hook that is called when training begins."""
@@ -91,13 +97,14 @@ class MetLitModule(LightningModule):
             - A tensor of predictions.
             - A tensor of target labels.
         """
-        climate_data, text, labels, datetimes = batch
+        climate_data, labels, _, _= batch
 
         # Forward pass
-        climate_features, text_features = self(climate_data, text)
-        loss = self.net.loss_fn(climate_features, text_features, self.device)
+        logits = self(climate_data)
+        loss = torch.nn.CrossEntropyLoss(logits, labels)
+        preds = torch.argmax(logits, dim=1)
 
-        return loss
+        return loss, preds, labels
 
     def training_step(
         self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
@@ -108,12 +115,13 @@ class MetLitModule(LightningModule):
         :param batch_idx: The index of the current batch.
         :return: A tensor of losses between model predictions and targets.
         """
-        loss = self.model_step(batch)
+        loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
         self.train_loss(loss)
+        self.train_acc(preds, targets)
         self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
-
+        self.log("train/acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def on_train_epoch_end(self) -> None:
@@ -126,11 +134,13 @@ class MetLitModule(LightningModule):
         :param batch: A batch of data (a tuple) containing the input tensor of met data and text
         :param batch_idx: The index of the current batch.
         """
-        loss = self.model_step(batch)
+        loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
         self.val_loss(loss)
+        self.val_acc(preds, targets)
         self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def on_validation_epoch_end(self) -> None:
         "Lightning hook that is called when a validation epoch ends."
@@ -142,11 +152,13 @@ class MetLitModule(LightningModule):
         :param batch: A batch of data (a tuple) containing the input tensor of met data and texts.
         :param batch_idx: The index of the current batch.
         """
-        loss = self.model_step(batch)
+        loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
         self.test_loss(loss)
+        self.test_acc(preds, targets)
         self.log("test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test/acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def on_test_epoch_end(self) -> None:
         """Lightning hook that is called when a test epoch ends."""

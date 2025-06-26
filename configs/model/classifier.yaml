@@ -1,11 +1,11 @@
-_target_: src.models.met_module.MetLitModule
+_target_: src.models.classifier_module.MetClassLitModule
 
 net:
-  _target_: src.models.components.climate_clip.ClimateDataEncoder
-  input_channels: 3
-  out_channels: 32
+  _target_: src.models.climate_classifier.ClimateClassifier
+  encoder: ${paths.log_dir}/train/runs/2025-06-26_00-32-56/checkpoints/epoch_008.ckpt/
+  num_classes: 10
   output_dim: 512
-  bert_freeze: False
+  encoder_freeze: False
 
 optimizer:
   _target_: torch.optim.Adam

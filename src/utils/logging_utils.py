@@ -1,25 +1,19 @@
-from typing import Any, Dict
-
-from lightning_utilities.core.rank_zero import rank_zero_only
+from pytorch_lightning.utilities import rank_zero_only
 from omegaconf import OmegaConf
 
 from src.utils import pylogger
 
-log = pylogger.RankedLogger(__name__, rank_zero_only=True)
+log = pylogger.get_pylogger(__name__)
 
 
 @rank_zero_only
-def log_hyperparameters(object_dict: Dict[str, Any]) -> None:
-    """Controls which config parts are saved by Lightning loggers.
+def log_hyperparameters(object_dict: dict) -> None:
+    """Controls which config parts are saved by lightning loggers.
 
     Additionally saves:
-        - Number of model parameters
-
-    :param object_dict: A dictionary containing the following objects:
-        - `"cfg"`: A DictConfig object containing the main config.
-        - `"model"`: The Lightning model.
-        - `"trainer"`: The Lightning trainer.
+    - Number of model parameters
     """
+
     hparams = {}
 
     cfg = OmegaConf.to_container(object_dict["cfg"])
@@ -55,3 +49,4 @@ def log_hyperparameters(object_dict: Dict[str, Any]) -> None:
     # send hparams to all loggers
     for logger in trainer.loggers:
         logger.log_hyperparams(hparams)
+

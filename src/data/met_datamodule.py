@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
-from components.metdataset import MetDataset
+from .components.metdataset import MetDataset
 from torchvision.transforms import transforms
 
 
@@ -48,8 +48,8 @@ class MetDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str = "data/",
-        train_val_test_split: Tuple[int, int, int] = (55_000, 5_000, 10_000),
-        batch_size: int = 64,
+        train_val_test_split: Tuple[int, int, int] = (0.6, 0.2, 0.2),
+        batch_size: int = 8,
         num_workers: int = 0,
         pin_memory: bool = False,
     ) -> None:
@@ -68,9 +68,10 @@ class MetDataModule(LightningDataModule):
         self.save_hyperparameters(logger=False)
 
         # data transformations
-        self.transforms = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-        )
+        # self.transforms = transforms.Compose(
+        #     [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        # )
+        self.transforms = None
 
         self.data_train: Optional[Dataset] = None
         self.data_val: Optional[Dataset] = None
