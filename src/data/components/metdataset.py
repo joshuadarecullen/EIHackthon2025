@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
+import torch.nn.functional as F
 
 class MetDataset(Dataset):
     def __init__(self, data_dir: str, transform: Callable):
@@ -19,6 +20,7 @@ class MetDataset(Dataset):
         self.labels = []
         self.datetime = []
         self.npy_paths = []
+        self.label_idx: dict = None
 
         with open(self.csv_path, newline='', encoding='utf-8') as csvfile:
             csv_reader = csv.DictReader(csvfile)
@@ -30,6 +32,7 @@ class MetDataset(Dataset):
 
         self.npy_paths = [os.path.join(self.data_dir, x)
                           for x in self.npy_paths]
+        self.labels = self._onehot(self.labels)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         met_data = np.load(self.npy_paths[idx]).astype(np.float32)
@@ -47,10 +50,24 @@ class MetDataset(Dataset):
     def __len__(self):
         return len(self.npy_paths)
 
+    def _onehot(self, label_list):
+
+        # Step 2: Get unique classes and build label-to-index map
+        unique_classes = sorted(set(label_list))  # ensure deterministic order
+        class_to_idx = {label: idx for idx, label in enumerate(unique_classes)}
+        self.label_idx = {idx: label for idx, label in enumerate(unique_classes)} 
+
+        # Step 3: Map labels to indices
+        label_indices = torch.tensor([class_to_idx[label] for label in label_list])
+
+        # Step 4: One-hot encode
+        num_classes = len(unique_classes)
+        one_hot_labels = F.one_hot(label_indices, num_classes=num_classes).float()
+        labels_indices = torch.argmax(one_hot_labels, dim=1)  # shape: [428]
+        return label_indices
+
 
 # if __name__ == "__main__":
-#     '/home/joshua/Documents/phd_university/hackathon/EIHackthon2025/'
-#     dataset = MetDataset('/home/joshua/Documents/phd_university/hackathon/EIHackthon2025/', transform=None)
-#     print(len(dataset.labels))
-#     print(len(dataset.texts))
-#     print(len(dataset.npy_paths))
+#     '/home/joshua/Documents/phd_university/hackathon/EIHackthon2025/data'
+#     dataset = MetDataset('/home/joshua/Documents/phd_university/hackathon/EIHackthon2025/data/', transform=None)
+#     print(dataset.label_idx[9])

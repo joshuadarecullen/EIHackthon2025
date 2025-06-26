@@ -66,11 +66,12 @@ class MetClassLitModule(LightningModule):
         self.test_loss = MeanMetric()
 
          # metric objects for calculating and averaging accuracy across batches
-        self.train_acc = Accuracy(task="multiclass", num_classes=10)
-        self.val_acc = Accuracy(task="multiclass", num_classes=10)
-        self.test_acc = Accuracy(task="multiclass", num_classes=10)
+        self.train_acc = Accuracy(task="multiclass", num_classes=280)
+        self.val_acc = Accuracy(task="multiclass", num_classes=280)
+        self.test_acc = Accuracy(task="multiclass", num_classes=280)
 
         self.best_val_acc = MaxMetric()
+        self.criterion = torch.nn.CrossEntropyLoss()  # just use default
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Perform a forward pass through the model `self.net`.
@@ -97,12 +98,14 @@ class MetClassLitModule(LightningModule):
             - A tensor of predictions.
             - A tensor of target labels.
         """
-        climate_data, labels, _, _= batch
+        climate_data, _, labels, _ = batch
 
         # Forward pass
         logits = self(climate_data)
-        loss = torch.nn.CrossEntropyLoss(logits, labels)
+        loss = self.criterion(logits, labels)
         preds = torch.argmax(logits, dim=1)
+        print(preds)
+        print(labels)
 
         return loss, preds, labels
 

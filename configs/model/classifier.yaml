@@ -3,7 +3,7 @@ _target_: src.models.classifier_module.MetClassLitModule
 net:
   _target_: src.models.climate_classifier.ClimateClassifier
   encoder: ${paths.log_dir}/train/runs/2025-06-26_00-32-56/checkpoints/epoch_008.ckpt/
-  num_classes: 10
+  num_classes: 280
   output_dim: 512
   encoder_freeze: False
 

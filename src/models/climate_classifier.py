@@ -20,5 +20,4 @@ class ClimateClassifier(torch.nn.Module):
     def forward(self, x):
         with torch.no_grad():  # optional: freeze encoder
             features = self.model.net.encode_climate_data(x)
-            print(features.shape)
         return self.classifier(features)
