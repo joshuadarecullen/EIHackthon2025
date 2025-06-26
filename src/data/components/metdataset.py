@@ -44,8 +44,12 @@ class MetDataset(Dataset):
         label = self.labels[idx]
         datetime = self.datetime[idx]
         text = self.texts[idx]
-        return met_data, text, label, datetime
-
+        return {
+                "climate_data": met_data,
+                "label": label,
+                "text": self.texts[idx],       # optional string
+                "datetime": self.datetime[idx] # optional string
+                }
 
     def __len__(self):
         return len(self.npy_paths)

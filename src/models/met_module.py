@@ -1,5 +1,4 @@
-from typing import Any, Dict, Tuple
-
+from typing import Tuple, Dict, Any
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning import LightningModule
@@ -91,7 +90,10 @@ class MetLitModule(LightningModule):
             - A tensor of predictions.
             - A tensor of target labels.
         """
-        climate_data, text, labels, datetimes = batch
+        climate_data = batch["climate_data"].to(self.device)
+        text = batch["text"]
+        labels = batch["label"].to(self.device)
+        # climate_data, text, labels, datetimes = batch
 
         # Forward pass
         climate_features, text_features = self(climate_data, text)

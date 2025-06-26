@@ -26,7 +26,7 @@ class ClimateDataEncoder(nn.Module):
         self.fc1 = nn.Linear(1200,output_dim)
         self.fc2 = nn.Linear(768, output_dim)
 
-        self.bert_model = BertModel.from_pretrained('bert-base-uncased')
+        self.bert_model = BertModel.from_pretrained('bert-base-uncased').to("cuda")
         self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
@@ -55,8 +55,10 @@ class ClimateDataEncoder(nn.Module):
         return x
 
     def encode_text(self, text):
-        inputs = self.bert_tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
-        outputs = self.bert_model(**inputs)
+        encodings = self.bert_tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
+        input_ids = encodings["input_ids"].to("cuda")
+        attention_mask = encodings["attention_mask"].to("cuda")
+        outputs = self.bert_model(input_ids=input_ids, attention_mask=attention_mask)
         pooled_output = outputs.pooler_output
         pooled_output = self.fc2(pooled_output)
         return pooled_output

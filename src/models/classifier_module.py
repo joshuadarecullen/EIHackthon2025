@@ -98,14 +98,13 @@ class MetClassLitModule(LightningModule):
             - A tensor of predictions.
             - A tensor of target labels.
         """
-        climate_data, _, labels, _ = batch
+        climate_data = batch["climate_data"].to(self.device)
+        labels = batch["label"].to(self.device)
 
         # Forward pass
         logits = self(climate_data)
         loss = self.criterion(logits, labels)
         preds = torch.argmax(logits, dim=1)
-        print(preds)
-        print(labels)
 
         return loss, preds, labels
 
