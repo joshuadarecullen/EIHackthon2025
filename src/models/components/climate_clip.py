@@ -3,37 +3,49 @@ import torch.nn.functional as F
 import torch
 from transformers import BertModel, BertTokenizer
 
+"""
+Created by: Joshua Dare-Cullen
+"""
+
 class ClimateDataEncoder(nn.Module):
     def __init__(self,
-                 input_channels,
-                 out_channels,
-                 output_dim,
-                 bert_freeze=False):
+                 input_channels: int,
+                 out_channels: int,
+                 output_dim: int = 512,
+                 bert_freeze=True):
 
         super().__init__()
 
+        """
+        A very simple CNN based climate data encoder. The climate data is
+        reduced from [3, 121, 161] to [1, 512], which will match berts
+        embeddings for the text.
+        """
 
+        # Climate data encoder
         self.conv1 = nn.Conv2d(input_channels, out_channels, kernel_size=3, stride=1, padding="same")
         self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-
         self.convpool = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding="same"),
             nn.ReLU()
         )
-
         self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv2 = nn.ModuleList([self.convpool for _ in range(2)])
         self.fc1 = nn.Linear(1200,output_dim)
-        self.fc2 = nn.Linear(768, output_dim)
 
+        # Load the pretrained burt, and set to cuda. Hacky as folks might
+        # be running on the CPU.
         self.bert_model = BertModel.from_pretrained('bert-base-uncased').to("cuda")
         self.bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
+        # text embedder to same dimension as climate data
+        self.fc2 = nn.Linear(768, output_dim)
 
+        # Learned temperature.
         self.temperature = nn.Parameter(torch.tensor(0.07))
 
         # Freeze BERT
-        if bert_freeze == False:
+        if bert_freeze == True:
             for param in self.bert_model.parameters():
                 param.requires_grad = False
 
@@ -50,12 +62,12 @@ class ClimateDataEncoder(nn.Module):
             x = conv(x)
         x = self.maxpool2(x)
         x = x.view(x.size(0), x.size(1), -1)
-        x = x.mean(dim=1)
+        x = x.mean(dim = 1)
         x = self.fc1(x)
         return x
 
     def encode_text(self, text):
-        encodings = self.bert_tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
+        encodings = self.bert_tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=self.output_dim)
         input_ids = encodings["input_ids"].to("cuda")
         attention_mask = encodings["attention_mask"].to("cuda")
         outputs = self.bert_model(input_ids=input_ids, attention_mask=attention_mask)
@@ -66,13 +78,13 @@ class ClimateDataEncoder(nn.Module):
     def loss_fn(self, climate_features, text_features, device):
         """
         Compute loss:
-        Ground truth  acts as the target labels when comparing each image with the corresponding text. It assumes that:
+        Ground truth acts as the target labels when comparing each image with the corresponding text. It assumes that:
 
-            Metdata i is paired with Text i
+            Metdata I is paired with Text I
 
-        There is a one-to-one correspondence between the metdata and texts in each batch
+        There is a one-to-one correspondence between the climate features and texts in each batch.
 
-        CLIP models compute a similarity matrix between all met_data and all texts in the batch.
+        CLIP models compute a similarity matrix between all climate features  and all texts in the batch.
         """
         text_embed = F.normalize(text_features, dim=-1)
         climate_embed = F.normalize(climate_features, dim=-1)

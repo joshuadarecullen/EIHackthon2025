@@ -5,12 +5,16 @@ from pytorch_lightning import LightningModule
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification.accuracy import Accuracy
 
+"""
+Created by: Joshua Dare-Cullen
+"""
 
 class MetLitModule(LightningModule):
-    """LightningModule for finetuing a CLIP based model to Meteorological data.
+    """LightningModule for training CLIP style model to Meteorological data:
         - Geopotential
         - Air pressure
         - Temperature
+        And the text desciptions for the data.
 
     A `LightningModule` implements 8 key methods:
 
@@ -87,8 +91,6 @@ class MetLitModule(LightningModule):
 
         :return: A tuple containing (in order):
             - A tensor of losses.
-            - A tensor of predictions.
-            - A tensor of target labels.
         """
         climate_data = batch["climate_data"].to(self.device)
         text = batch["text"]
@@ -97,6 +99,7 @@ class MetLitModule(LightningModule):
 
         # Forward pass
         climate_features, text_features = self(climate_data, text)
+        #compute loss
         loss = self.net.loss_fn(climate_features, text_features, self.device)
 
         return loss

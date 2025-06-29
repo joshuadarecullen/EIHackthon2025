@@ -27,6 +27,7 @@ dependencies:
       - torchvision==0.21.0
       - triton==3.2.0
       - wandb==0.19.8
-      - pyarrow
       - notebook==6
       - transformers
+      - pandas==2.3.0
+      - pyarrow
