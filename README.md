@@ -5,7 +5,7 @@ This project involved multi-modal Met Office weather data. Which consisted of cl
 Then main model was CLIP inspired, where we implemented a contrastive loss to embed climate data in the same vector space as descriptions.
 
 
-[Model Architecture](assets/model_design.png)
+![Model Architecture](assets/model_design.png)
 
 Our team:
 
