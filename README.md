@@ -9,8 +9,8 @@ Then main model was CLIP inspired, where we implemented a contrastive loss to em
 
 Our team:
 
-Oscar: <oh396@exeter.ac.uk>
-Selorm: <sd923@exeter.ac.uk>
-Nuria: <nb748@exeter.ac.uk>
-Joshua: <jd983@exeter.ac.uk>
-Arjun: <ab1574@exeter.ac.uk>
+Oscar: <oh396@exeter.ac.uk>  
+Selorm: <sd923@exeter.ac.uk>  
+Nuria: <nb748@exeter.ac.uk>  
+Joshua: <jd983@exeter.ac.uk>  
+Arjun: <ab1574@exeter.ac.uk>  
