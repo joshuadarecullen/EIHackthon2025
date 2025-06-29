@@ -7,6 +7,17 @@ Then main model was CLIP inspired, where we implemented a contrastive loss to em
 
 ![Model Architecture](assets/model_design.png)
 
+![Model Training](assets/model_training)
+Legend:
+  - orange: training
+  - blue: validation
+
+## Instructions
+
+Once the repo has been cloned, create a data/EIB2025 directory and put the dataset.csv and npy files within. You can just put it in data but just make sure you account for this change in metdataset.py.  
+
+After creating the conda environment, just execute: python src/train.py
+
 Our team:
 
 Oscar: <oh396@exeter.ac.uk>  
