@@ -7,7 +7,7 @@ Then main model was CLIP inspired, where we implemented a contrastive loss to em
 
 ![Model Architecture](assets/model_design.png)
 
-![Model Training](assets/model_training)
+![Model Training](assets/model_training.png)
 Legend:
   - orange: training
   - blue: validation
